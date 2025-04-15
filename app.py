@@ -15,10 +15,20 @@ app = inferless.Cls(gpu="A10")
 
 class InferlessPythonModel:
   
-    def image_to_base64(image):
-        buff = BytesIO()
-        image.save(buff, format="PNG")
-        return base64.b64encode(buff.getvalue()).decode("utf-8")
+    def encode_base64(image_rgb: np.ndarray, image_format: str = "PNG") -> str:
+        """
+        Encode a 3-channel RGB NumPy image to a base64 string.
+
+        Parameters:
+            image_rgb (np.ndarray): 3-channel RGB image.
+            image_format (str): Image format to use ("PNG", "JPEG", etc.)
+
+        Returns:
+            str: Base64-encoded image string.
+        """
+        buffered = BytesIO()
+        Image.fromarray(image_rgb).save(buffered, format=image_format)
+        return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     @app.load
     def initialize(self):
@@ -84,7 +94,7 @@ class InferlessPythonModel:
                 ).images
 
             # Convert to base64
-            output_imgs = [self.image_to_base64(image) for image in output_images]
+            output_imgs = [self.encode_base64(image) for image in output_images]
             return {"images": output_imgs}
         except Exception as e:
             print(e)
