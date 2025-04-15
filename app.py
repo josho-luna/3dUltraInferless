@@ -4,6 +4,7 @@ import inferless
 import torch
 import cv2
 from diffusers import ControlNetModel, AutoPipelineForImage2Image
+from diffusers.utils import load_image
 import numpy as np
 import base64
 
@@ -54,7 +55,8 @@ class InferlessPythonModel:
     controlnet_conditioning_scale = [0.6,0.7,0.65,0.67]
     guidance = [7,7.5,8,10]
 
-    img = Image.open(BytesIO(img)).resize(((1024,1024)), Image.LANCZOS)
+    img = load_image(img).resize((1024, 1024), Image.LANCZOS)
+
     
     control_image = preprocess_img(img)
 

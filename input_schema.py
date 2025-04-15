@@ -1,8 +1,8 @@
 INPUT_SCHEMA = {
     "image_bytes": {
-        'datatype': 'BYTES',
+        'datatype': 'STRING',
         'required': True,
         'shape': [1],
-        'example': [b'Example byte data here...']
+        'example': ['https://raw.githubusercontent.com/josho201/3dUltra/refs/heads/main/imgs/test1.jpeg']
     }
 }
