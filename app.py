@@ -7,15 +7,13 @@ from diffusers import ControlNetModel, AutoPipelineForImage2Image
 from diffusers.utils import load_image
 import numpy as np
 import base64
-
-
 from io import BytesIO
 
 app = inferless.Cls(gpu="A10")
 
 class InferlessPythonModel:
-  
-    def encode_base64(image_rgb: np.ndarray, image_format: str = "PNG") -> str:
+    
+    def encode_base64(self, image_rgb: Image, image_format: str = "PNG") -> str:
         """
         Encode a 3-channel RGB NumPy image to a base64 string.
 
@@ -27,93 +25,94 @@ class InferlessPythonModel:
             str: Base64-encoded image string.
         """
         buffered = BytesIO()
-        Image.fromarray(image_rgb).save(buffered, format=image_format)
+        image_rgb.save(buffered, format=image_format)
         return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     @app.load
     def initialize(self):
 
+        # CHANGED: Switched to a smaller, faster ControlNet model.
         self.controlnet = ControlNetModel.from_pretrained(
-            "diffusers/controlnet-depth-sdxl-1.0", # Depth ControlNet model
+            "diffusers/controlnet-depth-sdxl-1.0-small", # Smaller Depth ControlNet model
             torch_dtype=torch.float16,
             variant="fp16", 
             use_safetensors=True
         ).to("cuda")
 
+        # CHANGED: Switched to the faster SDXL-Turbo model.
         self.pipeline = AutoPipelineForImage2Image.from_pretrained(
-            "stabilityai/stable-diffusion-xl-base-1.0",
+            "stabilityai/sdxl-turbo", # Faster Turbo model
             controlnet=self.controlnet,
             torch_dtype = torch.float16,
             variant = "fp16",
-
             use_safetensors=True
         ).to("cuda")
-
-
 
     @app.infer
     def infer(self, inputs):
 
-        try:
-            # Load Image and turn it into PIL image
-            img = inputs["image_bytes"]
+        # Load Image and turn it into PIL image
+        img = inputs["image"]
 
-            img = load_image(img).resize((1024, 1024), Image.LANCZOS)
-            control_image = self.preprocess_img(img)
+        img = load_image(img).resize((1024, 1024), Image.LANCZOS)
+        control_image = self.preprocess_img(img)
 
-            prompts = [
-                "Photorealistic portrait of a bald cute asleep newborn baby, closed eyes, soft light, DSLR, 85mm lens",
-            #   "Beautiful bald asleep newborn baby in a cradle, wearing a soft blue baby cap, warm diffuse lighting, natural tones",
-                "Peaceful sleeping newborn baby, bald, close-up with detailed skin texture, photorealistic, pink skin, shallow depth of field",
-                "Portrait of a sleeping newborn baby with closed eyes, resting peacefully in a soft womb-like environment, warm tones, detailed baby hands"
-            ]
+        prompts = [
+            "Photorealistic portrait of a bald cute asleep newborn baby, closed eyes, soft light, DSLR, 85mm lens",
+            "Peaceful sleeping newborn baby, bald, close-up with detailed skin texture, photorealistic, pink skin, shallow depth of field",
+            "Portrait of a sleeping newborn baby with closed eyes, resting peacefully in a soft womb-like environment, warm tones"
+        ]
 
-            negative_prompt = "hair, deformed, fingers, sad, ugly, disgusting, uncanny, blurry, grainy, monochrome, duplicate, artifact, watermark, text"
+        negative_prompt = "hair, deformed, fingers, sad, ugly, disgusting, uncanny, blurry, grainy, monochrome, duplicate, artifact, watermark, text"
 
-            num_inference_steps = [30, 25, 45]
-            controlnet_conditioning_scale = [0.6, 0.75, 0.9]
-            guidance = [7.0, 10.0, 12.0]
+        # CHANGED: Drastically reduced inference steps, as required for SDXL-Turbo models for optimal speed.
+        num_inference_steps = [2, 3, 4]
+        controlnet_conditioning_scale = [0.6, 0.75, 0.7]
+        # CHANGED: Guidance scale must be 0.0 for SDXL-Turbo.
+        guidance = [0.0, 0.0, 0.0]
 
-            # Optional: set different generators for reproducibility
-            seeds = [43, 44, 45]
-            generators = [torch.manual_seed(seed) for seed in seeds]
+        # Optional: set different generators for reproducibility
+        seeds = [43, 44, 45]
+        generators = [torch.manual_seed(seed) for seed in seeds]
 
-            # Run batch if your pipeline supports it
-            with torch.inference_mode():
-                output_images = self.pipeline(
-                    image=[img] * 3,
-                    prompt=prompts,
-                    negative_prompt=[negative_prompt] * 3,
-                    control_image=[control_image] * 3,
-                    guidance_scale=guidance,
-                    controlnet_conditioning_scale=controlnet_conditioning_scale,
-                    num_inference_steps=num_inference_steps,
-                    generator=generators,
+
+        output_imgs = []
+        # Run batch if your pipeline supports it
+        with torch.inference_mode():
+            for i in range(len(prompts)):
+                output_image = self.pipeline(
+                    image=img,
+                    prompt=prompts[i],
+                    negative_prompt=negative_prompt,
+                    control_image=control_image,
+                    guidance_scale=guidance[i],
+                    controlnet_conditioning_scale=controlnet_conditioning_scale[i],
+                    # CHANGED: num_inference_steps for Turbo models should be very low
+                    num_inference_steps=num_inference_steps[i],
+                    generator=generators[i],
                     height=1024,
                     width=1024
-                ).images
+                ).images[0]
 
-            # Convert to base64
-            output_imgs = [self.encode_base64(image) for image in output_images]
-            return {"images": output_imgs}
-        except Exception as e:
-            print(e)
-            return []
-        
+                output_image = self.encode_base64(output_image)
+                output_imgs.append(output_image)
 
+                del output_image
+                torch.cuda.empty_cache()
 
+        return {"images": output_imgs}
 
     def finalize(self,args):
         self.pipeline = None
         self.controlnet = None
+        torch.cuda.empty_cache()
 
 
-
-    def preprocess_img(img: Image, res: tuple[int, int] = (1024, 1024)):
+    def preprocess_img(self, img: Image, res: tuple[int, int] = (1024, 1024)):
         """Preprocesses the input image: Load, Grayscale, Resize, CLAHE, Denoise, Sharpen, Convert to RGB."""
         kernel = np.array([[0, -1, 0],
-                    [-1, 5, -1],
-                    [0, -1, 0]])
+                       [-1, 5, -1],
+                       [0, -1, 0]])
 
 
         try:
@@ -139,5 +138,3 @@ class InferlessPythonModel:
         final = Image.fromarray(sharpened_img)
         # Convert final grayscale image to RGB for the pipeline input
         return final.convert("RGB")
-
-    
