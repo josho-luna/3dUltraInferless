@@ -3,14 +3,14 @@ from PIL import Image
 import inferless
 import torch
 import cv2
-from diffusers import ControlNetModel, AutoPipelineForImage2Image
+# ADDED: Import AutoencoderKL for the optimized VAE
+from diffusers import ControlNetModel, AutoPipelineForImage2Image, AutoencoderKL 
 from diffusers.utils import load_image
 import numpy as np
 import base64
 from io import BytesIO
 
 app = inferless.Cls(gpu="A10")
-RES = 720
 
 class InferlessPythonModel:
     
@@ -32,22 +32,36 @@ class InferlessPythonModel:
     @app.load
     def initialize(self):
 
-        # CHANGED: Switched to a smaller, faster ControlNet model.
+        # OPTIMIZATION: Load a faster, fp16-optimized VAE
+        vae = AutoencoderKL.from_pretrained(
+            "madebyollin/sdxl-vae-fp16-fix", 
+            torch_dtype=torch.float16
+        )
+
         self.controlnet = ControlNetModel.from_pretrained(
-            "diffusers/controlnet-depth-sdxl-1.0-small", # Smaller Depth ControlNet model
+            "diffusers/controlnet-depth-sdxl-1.0-small",
             torch_dtype=torch.float16,
             variant="fp16", 
             use_safetensors=True
         ).to("cuda")
 
-        # CHANGED: Switched to the faster SDXL-Turbo model.
         self.pipeline = AutoPipelineForImage2Image.from_pretrained(
-            "stabilityai/sdxl-turbo", # Faster Turbo model
+            "stabilityai/sdxl-turbo",
             controlnet=self.controlnet,
+            # OPTIMIZATION: Pass the faster VAE to the pipeline
+            vae=vae,
             torch_dtype = torch.float16,
             variant = "fp16",
             use_safetensors=True
         ).to("cuda")
+        
+        # OPTIMIZATION: Enable xFormers for memory-efficient attention
+        self.pipeline.enable_xformers_memory_efficient_attention()
+
+        # OPTIMIZATION: Compile the UNet and VAE for a significant speed boost
+        self.pipeline.unet = torch.compile(self.pipeline.unet, mode="reduce-overhead", fullgraph=True)
+        self.pipeline.vae = torch.compile(self.pipeline.vae, mode="reduce-overhead", fullgraph=True)
+
 
     @app.infer
     def infer(self, inputs):
@@ -55,8 +69,9 @@ class InferlessPythonModel:
         # Load Image and turn it into PIL image
         img = inputs["image"]
 
-        img = load_image(img).resize((RES, RES), Image.LANCZOS)
-        control_image = self.preprocess_img(img)
+        # CHANGED: Resized to 512x512 for optimal SDXL-Turbo performance
+        img = load_image(img).resize((512, 512), Image.LANCZOS)
+        control_image = self.preprocess_img(img, res=(512, 512))
 
         prompts = [
             "Photorealistic portrait of a bald cute asleep newborn baby, closed eyes, soft light, DSLR, 85mm lens",
@@ -65,21 +80,31 @@ class InferlessPythonModel:
         ]
 
         negative_prompt = "hair, deformed, fingers, sad, ugly, disgusting, uncanny, blurry, grainy, monochrome, duplicate, artifact, watermark, text"
-
-        # CHANGED: Drastically reduced inference steps, as required for SDXL-Turbo models for optimal speed.
+        
         num_inference_steps = [2, 3, 4]
         controlnet_conditioning_scale = [0.6, 0.75, 0.7]
-        # CHANGED: Guidance scale must be 0.0 for SDXL-Turbo.
         guidance = [0.0, 0.0, 0.0]
 
-        # Optional: set different generators for reproducibility
         seeds = [43, 44, 45]
         generators = [torch.manual_seed(seed) for seed in seeds]
 
 
         output_imgs = []
-        # Run batch if your pipeline supports it
         with torch.inference_mode():
+            # OPTIMIZATION: Warm-up run for torch.compile() - this makes subsequent runs faster
+            # You can optionally remove this if the first generation's latency is not critical
+            print("Performing a warm-up inference run...")
+            _ = self.pipeline(
+                prompt=prompts[0], 
+                image=img, 
+                control_image=control_image, 
+                num_inference_steps=1, 
+                guidance_scale=0.0,
+                height=512,
+                width=512
+            )
+            print("Warm-up complete.")
+
             for i in range(len(prompts)):
                 output_image = self.pipeline(
                     image=img,
@@ -88,11 +113,11 @@ class InferlessPythonModel:
                     control_image=control_image,
                     guidance_scale=guidance[i],
                     controlnet_conditioning_scale=controlnet_conditioning_scale[i],
-                    # CHANGED: num_inference_steps for Turbo models should be very low
                     num_inference_steps=num_inference_steps[i],
                     generator=generators[i],
-                    height=RES,
-                    width=RES
+                    # CHANGED: Height and width set to 512 for optimal speed
+                    height=512,
+                    width=512
                 ).images[0]
 
                 output_image = self.encode_base64(output_image)
@@ -109,7 +134,8 @@ class InferlessPythonModel:
         torch.cuda.empty_cache()
 
 
-    def preprocess_img(self, img: Image, res: tuple[int, int] = (RES, RES)):
+    # CHANGED: Default resolution is now 512x512
+    def preprocess_img(self, img: Image, res: tuple[int, int] = (512, 512)):
         """Preprocesses the input image: Load, Grayscale, Resize, CLAHE, Denoise, Sharpen, Convert to RGB."""
         kernel = np.array([[0, -1, 0],
                        [-1, 5, -1],
