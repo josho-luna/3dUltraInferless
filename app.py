@@ -10,6 +10,7 @@ import base64
 from io import BytesIO
 
 app = inferless.Cls(gpu="A10")
+RES = 720
 
 class InferlessPythonModel:
     
@@ -54,7 +55,7 @@ class InferlessPythonModel:
         # Load Image and turn it into PIL image
         img = inputs["image"]
 
-        img = load_image(img).resize((1024, 1024), Image.LANCZOS)
+        img = load_image(img).resize((RES, RES), Image.LANCZOS)
         control_image = self.preprocess_img(img)
 
         prompts = [
@@ -90,8 +91,8 @@ class InferlessPythonModel:
                     # CHANGED: num_inference_steps for Turbo models should be very low
                     num_inference_steps=num_inference_steps[i],
                     generator=generators[i],
-                    height=1024,
-                    width=1024
+                    height=RES,
+                    width=RES
                 ).images[0]
 
                 output_image = self.encode_base64(output_image)
@@ -108,7 +109,7 @@ class InferlessPythonModel:
         torch.cuda.empty_cache()
 
 
-    def preprocess_img(self, img: Image, res: tuple[int, int] = (1024, 1024)):
+    def preprocess_img(self, img: Image, res: tuple[int, int] = (RES, RES)):
         """Preprocesses the input image: Load, Grayscale, Resize, CLAHE, Denoise, Sharpen, Convert to RGB."""
         kernel = np.array([[0, -1, 0],
                        [-1, 5, -1],
