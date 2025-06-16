@@ -67,7 +67,7 @@ class InferlessPythonModel:
     def infer(self, inputs):
 
         # Load Image and turn it into PIL image
-        img = inputs["image"]
+        img = inputs["image_bytes"]
 
         # CHANGED: Resized to 512x512 for optimal SDXL-Turbo performance
         img = load_image(img).resize((512, 512), Image.LANCZOS)
