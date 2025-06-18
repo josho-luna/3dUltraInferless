@@ -140,4 +140,8 @@ class InferlessPythonModel:
         """
         buffered = BytesIO()
         image.save(buffered, format=image_format)
-        return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+        img64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        if img64 is None:
+            raise TypeError("Please check this goddam function")
+        return 
