@@ -80,6 +80,11 @@ class InferlessPythonModel:
 
         # Run batch if your pipeline supports it
         output_images = []
+
+        assert len(prompts) == len(num_inference_steps) == len(controlnet_conditioning_scale) == len(guidance) == len(generators), "Input lists must have the same length"
+        assert type(img) == Image.Image, "Input image must be a PIL Image"
+
+        
         with torch.inference_mode():
             for i in range(len(prompts)):
                 tmp = self.pipeline(
