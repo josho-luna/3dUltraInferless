@@ -90,8 +90,8 @@ class InferlessPythonModel:
                 
 
         # Convert to base64
-        output_imgs = [self.encode_base64(image) for image in output_images]
-        return {"images": output_imgs}
+        output_images = [self.encode_base64(image) for image in output_images]
+        return {"images": output_images}
 
 
 
@@ -144,4 +144,10 @@ class InferlessPythonModel:
         img64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
         if img64 is None:
             raise TypeError("Please check this goddam function")
-        return 
+        
+            return 
+
+
+{
+  "error": "Failed to process the request(s) for model instance '3dultrainferless_30165dc53c8b448f9478cd1bfeab7178_0', message: ConfigCreationException: Output field --- images --- is None which is currently not supported. You can try sending empty string or dummy value\n\nAt:\n  /var/models-local/3dultrainferless_30165dc53c8b448f9478cd1bfeab7178-ccafcb/3dultrainferless_30165dc53c8b448f9478cd1bfeab7178/1/model.py(282): execute\n"
+}
