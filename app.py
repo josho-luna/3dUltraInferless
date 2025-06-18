@@ -84,7 +84,7 @@ class InferlessPythonModel:
         assert len(prompts) == len(num_inference_steps) == len(controlnet_conditioning_scale) == len(guidance) == len(generators), "Input lists must have the same length"
         assert type(img) == Image.Image, "Input image must be a PIL Image"
 
-        
+
         with torch.inference_mode():
             for i in range(len(prompts)):
                 tmp = self.pipeline(
@@ -118,20 +118,14 @@ class InferlessPythonModel:
 
 
     def preprocess_img(img: Image, res: tuple[int, int] = (1024, 1024)):
+
         """Preprocesses the input image: Load, Grayscale, Resize, CLAHE, Denoise, Sharpen, Convert to RGB."""
         kernel = np.array([[0, -1, 0],
                     [-1, 5, -1],
                     [0, -1, 0]])
 
 
-        try:
-            # Load image, convert to grayscale, resize
-            img = img.convert("L")
-
-        except Exception as e:
-            print(f"Error opening or processing image: {e}")
-            return None
-            
+        img = img.convert("L")
         img_np = np.array(img)
 
         # Apply CLAHE for contrast enhancement
