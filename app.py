@@ -84,7 +84,7 @@ class InferlessPythonModel:
                     height=1024,
                     width=1024
                 ).images
-                output_images.append(tmp)
+                output_images.append(tmp[0])
                 
             
                 
@@ -140,4 +140,5 @@ class InferlessPythonModel:
         """
         buffered = BytesIO()
         Image.fromarray(image_rgb).save(buffered, format=image_format)
+
         return base64.b64encode(buffered.getvalue()).decode("utf-8")
