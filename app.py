@@ -127,18 +127,17 @@ class InferlessPythonModel:
         # Convert final grayscale image to RGB for the pipeline input
         return final.convert("RGB")
 
-    def encode_base64(self, image_rgb: np.ndarray, image_format: str = "PNG") -> str:
+    def encode_base64(self, image: Image.Image, image_format: str = "PNG") -> str:
         """
-        Encode a 3-channel RGB NumPy image to a base64 string.
+        Encode a PIL image to a base64 string.
 
         Parameters:
-            image_rgb (np.ndarray): 3-channel RGB image.
+            image (Image.Image): The PIL image to encode.
             image_format (str): Image format to use ("PNG", "JPEG", etc.)
 
         Returns:
             str: Base64-encoded image string.
         """
         buffered = BytesIO()
-        Image.fromarray(image_rgb).save(buffered, format=image_format)
-
+        image.save(buffered, format=image_format)
         return base64.b64encode(buffered.getvalue()).decode("utf-8")
