@@ -83,14 +83,14 @@ class InferlessPythonModel:
         with torch.inference_mode():
             for i in range(len(prompts)):
                 tmp = self.pipeline(
-                    image=[img] * 3,
-                    prompt=prompts,
-                    negative_prompt=[negative_prompt] * 3,
-                    control_image=[control_image] * 3,
-                    guidance_scale=guidance,
-                    controlnet_conditioning_scale=controlnet_conditioning_scale,
-                    num_inference_steps=num_inference_steps,
-                    generator=generators,
+                    image=[img],
+                    prompt= prompts[i],
+                    negative_prompt=[negative_prompt],
+                    control_image=[control_image],
+                    guidance_scale=guidance[i],
+                    controlnet_conditioning_scale=controlnet_conditioning_scale[i],
+                    num_inference_steps=num_inference_steps[i],
+                    generator=generators[i],
                     height=1024,
                     width=1024
                 ).images
