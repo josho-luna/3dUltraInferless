@@ -145,9 +145,4 @@ class InferlessPythonModel:
         if img64 is None:
             raise TypeError("Please check this goddam function")
         
-            return 
-
-
-{
-  "error": "Failed to process the request(s) for model instance '3dultrainferless_30165dc53c8b448f9478cd1bfeab7178_0', message: ConfigCreationException: Output field --- images --- is None which is currently not supported. You can try sending empty string or dummy value\n\nAt:\n  /var/models-local/3dultrainferless_30165dc53c8b448f9478cd1bfeab7178-ccafcb/3dultrainferless_30165dc53c8b448f9478cd1bfeab7178/1/model.py(282): execute\n"
-}
+        return img64 
