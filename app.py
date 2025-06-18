@@ -15,37 +15,22 @@ app = inferless.Cls(gpu="A10")
 
 class InferlessPythonModel:
   
-    def encode_base64(image_rgb: np.ndarray, image_format: str = "PNG") -> str:
-        """
-        Encode a 3-channel RGB NumPy image to a base64 string.
-
-        Parameters:
-            image_rgb (np.ndarray): 3-channel RGB image.
-            image_format (str): Image format to use ("PNG", "JPEG", etc.)
-
-        Returns:
-            str: Base64-encoded image string.
-        """
-        buffered = BytesIO()
-        Image.fromarray(image_rgb).save(buffered, format=image_format)
-        return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     @app.load
     def initialize(self):
 
         self.controlnet = ControlNetModel.from_pretrained(
-            "diffusers/controlnet-depth-sdxl-1.0", # Depth ControlNet model
+            "diffusers/controlnet-depth-sdxl-1.0-small", # Smaller Depth ControlNet model
             torch_dtype=torch.float16,
             variant="fp16", 
             use_safetensors=True
         ).to("cuda")
 
         self.pipeline = AutoPipelineForImage2Image.from_pretrained(
-            "stabilityai/stable-diffusion-xl-base-1.0",
+            "stabilityai/sdxl-turbo", # Faster Turbo model
             controlnet=self.controlnet,
             torch_dtype = torch.float16,
             variant = "fp16",
-
             use_safetensors=True
         ).to("cuda")
 
@@ -142,4 +127,17 @@ class InferlessPythonModel:
         # Convert final grayscale image to RGB for the pipeline input
         return final.convert("RGB")
 
-    
+    def encode_base64(self, image_rgb: np.ndarray, image_format: str = "PNG") -> str:
+        """
+        Encode a 3-channel RGB NumPy image to a base64 string.
+
+        Parameters:
+            image_rgb (np.ndarray): 3-channel RGB image.
+            image_format (str): Image format to use ("PNG", "JPEG", etc.)
+
+        Returns:
+            str: Base64-encoded image string.
+        """
+        buffered = BytesIO()
+        Image.fromarray(image_rgb).save(buffered, format=image_format)
+        return base64.b64encode(buffered.getvalue()).decode("utf-8")
