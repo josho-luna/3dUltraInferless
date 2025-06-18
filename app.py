@@ -117,7 +117,7 @@ class InferlessPythonModel:
 
 
 
-    def preprocess_img(img: Image, res: tuple[int, int] = (1024, 1024)):
+    def preprocess_img(self, img: Image, res: tuple[int, int] = (1024, 1024)):
 
         """Preprocesses the input image: Load, Grayscale, Resize, CLAHE, Denoise, Sharpen, Convert to RGB."""
         kernel = np.array([[0, -1, 0],
