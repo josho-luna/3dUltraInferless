@@ -55,7 +55,7 @@ class InferlessPythonModel:
 
         negative_prompt = "hair, deformed, fingers, sad, ugly, disgusting, uncanny, blurry, grainy, monochrome, duplicate, artifact, watermark, text"
 
-        num_inference_steps = [30, 25, 45]
+        num_inference_steps = [5, 4, 2]
         controlnet_conditioning_scale = [0.6, 0.75, 0.9]
         guidance = [7.0, 10.0, 12.0]
 
