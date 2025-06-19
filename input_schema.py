@@ -6,7 +6,7 @@ INPUT_SCHEMA = {
         'example': ["https://raw.githubusercontent.com/josho201/3dUltra/refs/heads/main/imgs/test2.png"]
     },
     'inference_steps': {
-        'datatype': 'INT8',
+        'datatype': 'INT64',
         'required': True,
         'shape': [1],
         'example': [2]
