@@ -1,8 +1,9 @@
 build:
-  cuda_version: "12.4.0"
+  # cuda_version: we currently support 12.1.1 and 11.8.0.
+  cuda_version: 12.1.1
   python_packages:
-    - "accelerate==1.6.0"
-    - "diffusers==0.33.1"
-    - "transformers==4.51.2"
-    - "torch==2.6.0"
-    - "inferless-cli==2.0.9"
+  - wheel==0.45.1
+    # you can add more python packages here
+  system_packages:
+    # - "libssl-dev" #example
+    # you can add system packages here

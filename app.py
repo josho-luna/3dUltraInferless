@@ -42,22 +42,19 @@ class InferlessPythonModel:
         
         # Load Image and turn it into PIL image
         img = inputs["image_bytes"]
+        num_inference_steps = inputs['inference_steps']
+        controlnet_conditioning_scale = inputs['controlet']
+        guidance = inputs['guidance']
+        prompt = inputs['prompt']
+
 
         img = load_image(img).resize((1024, 1024), Image.LANCZOS)
         control_image = self.preprocess_img(img)
 
-        prompts = [
-            "Photorealistic portrait of a bald cute asleep newborn baby, closed eyes, soft light, DSLR, 85mm lens",
-        #   "Beautiful bald asleep newborn baby in a cradle, wearing a soft blue baby cap, warm diffuse lighting, natural tones",
-            "Peaceful sleeping newborn baby, bald, close-up with detailed skin texture, photorealistic, pink skin, shallow depth of field",
-            "Portrait of a sleeping newborn baby with closed eyes, resting peacefully in a soft womb-like environment, warm tones, detailed baby hands"
-        ]
+        
 
         negative_prompt = "hair, deformed, fingers, sad, ugly, disgusting, uncanny, blurry, grainy, monochrome, duplicate, artifact, watermark, text"
 
-        num_inference_steps = [5, 4, 2]
-        controlnet_conditioning_scale = [0.6, 0.75, 0.9]
-        guidance = [7.0, 10.0, 12.0]
 
         # Optional: set different generators for reproducibility
         seeds = [43, 44, 45]
@@ -66,26 +63,23 @@ class InferlessPythonModel:
         # Run batch if your pipeline supports it
         output_images = []
 
-        assert len(prompts) == len(num_inference_steps) == len(controlnet_conditioning_scale) == len(guidance) == len(generators), "Input lists must have the same length"
-        assert type(img) == Image.Image, "Input image must be a PIL Image"
-
+        
 
         with torch.inference_mode():
-            for i in range(len(prompts)):
-                tmp = self.pipeline(
-                    image=img,
-                    prompt= prompts[i],
-                    negative_prompt=[negative_prompt],
-                    control_image=control_image,
-                    guidance_scale=guidance[i],
-                    controlnet_conditioning_scale=controlnet_conditioning_scale[i],
-                    num_inference_steps=num_inference_steps[i],
-                    generator=generators[i],
-                    height=1024,
-                    width=1024
-                ).images
-                output_images.append(tmp[0])
-                
+            tmp = self.pipeline(
+                image=img,
+                prompt= prompt,
+                negative_prompt=negative_prompt,
+                control_image=control_image,
+                guidance_scale=guidance,
+                controlnet_conditioning_scale=controlnet_conditioning_scale,
+                num_inference_steps=num_inference_steps,
+                height=1024,
+                width=1024
+            ).images
+            output_images.append(tmp[0])
+            del tmp
+            torch.cuda.empty_cache()
             
                 
 
