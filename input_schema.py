@@ -12,13 +12,13 @@ INPUT_SCHEMA = {
         'example': [2]
     },
     'controlet': {
-        'datatype': 'FP16',
+        'datatype': 'FP32',
         'required': True,
         'shape': [1],
         'example': [0.8]
     },
     'guidance': {
-        'datatype': 'FP16',
+        'datatype': 'FP32',
         'required': True,
         'shape': [1],
         'example': [1.25]
