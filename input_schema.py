@@ -6,19 +6,19 @@ INPUT_SCHEMA = {
         'example': ["https://raw.githubusercontent.com/josho201/3dUltra/refs/heads/main/imgs/test2.png"]
     },
     'num_inference_steps': {
-        'datatype': 'INT',
+        'datatype': 'INT8',
         'required': True,
         'shape': [1],
         'example': [2]
     },
     'controlet': {
-        'datatype': 'FLOAT',
+        'datatype': 'FP16',
         'required': True,
         'shape': [1],
         'example': [0.8]
     },
     'guidance': {
-        'datatype': 'FLOAT',
+        'datatype': 'FP16',
         'required': True,
         'shape': [1],
         'example': [1.25]
