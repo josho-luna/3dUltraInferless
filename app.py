@@ -73,7 +73,7 @@ class InferlessPythonModel:
                 control_image=control_image,
                 guidance_scale=guidance,
                 controlnet_conditioning_scale=controlnet_conditioning_scale,
-                num_inference_steps=num_inference_steps,
+                num_inference_steps=int(num_inference_steps),
                 height=1024,
                 width=1024
             ).images
