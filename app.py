@@ -27,7 +27,9 @@ class InferlessPythonModel:
         ).to("cuda")
 
         self.pipeline = AutoPipelineForImage2Image.from_pretrained(
-            "stabilityai/sdxl-turbo", # Faster Turbo model
+            
+            #"stabilityai/sdxl-turbo", # Faster Turbo model
+            "stabilityai/stable-diffusion-xl-base-1.0",
             controlnet=self.controlnet,
             torch_dtype = torch.float16,
             variant = "fp16",
