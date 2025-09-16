@@ -131,13 +131,11 @@ class InferlessPythonModel:
         output_images = []
 
 
-        print(f"### Used propmt: {prompt} \n\n")
-        print(f"### Used negative propmt: {negative_prompt}\n\n")
+        print(f"### Used propmt: {prompt}")
+        print(f"### Used negative propmt: {negative_prompt}")
         print("-" * 10)
 
         with torch.inference_mode():
-            torch.cuda.empty_cache()
-            gc.collect()
             tmp = self.pipeline(
                 image=img,
                 prompt=prompt,
@@ -166,6 +164,7 @@ class InferlessPythonModel:
         self.controlnet = None
         try:
             torch.cuda.empty_cache()
+            gc.collect()
         except Exception:
             pass
 
