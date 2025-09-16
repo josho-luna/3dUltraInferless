@@ -8,7 +8,7 @@ from diffusers.utils import load_image
 import numpy as np
 import base64
 
-
+import gc
 from io import BytesIO
 
 # Default prompts sourced from sandbox_og.ipynb
@@ -57,7 +57,7 @@ class InferlessPythonModel:
         controlnet_id = os.getenv("CONTROLNET_MODEL_ID", "diffusers/controlnet-depth-sdxl-1.0")
         base_model_id = os.getenv("BASE_MODEL_ID", "stabilityai/stable-diffusion-xl-base-1.0")
         self.image_size = int(os.getenv("IMAGE_SIZE", "1024"))
-        enable_offload = os.getenv("ENABLE_OFFLOAD", "false").lower() in ("1", "true", "yes")
+        enable_offload = True # os.getenv("ENABLE_OFFLOAD", "false").lower() in ("1", "true", "yes")
 
         # Load ControlNet (full variant) and base pipeline
         self.controlnet = ControlNetModel.from_pretrained(
@@ -120,7 +120,7 @@ class InferlessPythonModel:
         guidance = max(0.0, min(20.0, guidance))
 
         # Resolve prompts (default to system prompt if empty)
-        prompt = SYS_PROMPT.join(prompt_in) if prompt_in else SYS_PROMPT
+        prompt = SYS_PROMPT + prompt_in if prompt_in else SYS_PROMPT
         negative_prompt = SYS_NEG_PROMPT
 
         # Load and prepare images
@@ -131,11 +131,13 @@ class InferlessPythonModel:
         output_images = []
 
 
-        print(f"### Used propmt: {prompt}")
-        print(f"### Used negative propmt: {negative_prompt}")
+        print(f"### Used propmt: {prompt} \n\n")
+        print(f"### Used negative propmt: {negative_prompt}\n\n")
         print("-" * 10)
 
         with torch.inference_mode():
+            torch.cuda.empty_cache()
+            gc.collect()
             tmp = self.pipeline(
                 image=img,
                 prompt=prompt,
