@@ -229,8 +229,18 @@ class InferlessPythonModel:
                 traceback.print_exc()
                 return {"images": []}
             
+            # Try different return formats to match Inferless expectations
+            result_v1 = {"images": output_images}
+            result_v2 = {"generated_image": output_images[0] if output_images else ""}
+            result_v3 = output_images
+            
             print(f"DEBUG: Returning {len(output_images)} images")
-            return {"images": output_images}
+            print(f"DEBUG: Return structure v1: {type(result_v1)}")
+            print(f"DEBUG: Return keys v1: {list(result_v1.keys())}")
+            print(f"DEBUG: First image length: {len(output_images[0]) if output_images else 0}")
+            
+            # Try the original format first
+            return result_v1
             
         except Exception as e:
             print(f"CRITICAL ERROR in infer method: {e}")
