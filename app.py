@@ -130,6 +130,11 @@ class InferlessPythonModel:
 
         output_images = []
 
+
+        print(f"### Used propmt: {prompt}")
+        print(f"### Used negative propmt: {negative_prompt}")
+        print(f"{"-" * 10}")
+
         with torch.inference_mode():
             tmp = self.pipeline(
                 image=img,
