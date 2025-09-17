@@ -112,7 +112,7 @@ class InferlessPythonModel:
                 
             print("=== DEBUG: Model initialization completed successfully ===")
             
-            initialized = True
+            self.initialized = True
         except Exception as e:
             print(f"CRITICAL ERROR during initialization: {e}")
             import traceback
