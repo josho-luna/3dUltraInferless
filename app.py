@@ -42,7 +42,7 @@ class InferlessPythonModel:
     Output:
       - {"images": [base64_png_string]}
     """
- 
+    initialized = False
     @app.load
     def initialize(self):
         """Load ControlNet (depth SDXL) and the SDXL base pipeline on GPU.
@@ -112,6 +112,7 @@ class InferlessPythonModel:
                 
             print("=== DEBUG: Model initialization completed successfully ===")
             
+            initialized = True
         except Exception as e:
             print(f"CRITICAL ERROR during initialization: {e}")
             import traceback
@@ -146,6 +147,18 @@ class InferlessPythonModel:
 
             # Extract and normalize inputs
             img_src = _first(inputs.get("image_bytes"))
+
+            if img_src == "ping":
+
+                if self.initialized:
+                    return {
+                    "images": "ON"
+                    }
+                else:
+                    return {
+                        "images": "OFF"
+                    }
+
             print(f"DEBUG: Extracted image_bytes: {img_src}")
             
             if img_src is None:
@@ -255,6 +268,7 @@ class InferlessPythonModel:
         """Release GPU memory and clear references."""
         self.pipeline = None
         self.controlnet = None
+        self.initialized = False
         try:
             torch.cuda.empty_cache()
             gc.collect()
